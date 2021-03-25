@@ -1,0 +1,192 @@
+create table Famiglia(via varchar(100), numero integer(3) , interno integer(3), famiglia varchar(100), millesimi integer(3));
+insert into Famiglia(via , numero, interno , famiglia , millesimi) values ('roma', 1, 18, 'Rossi', 100);
+insert into Famiglia(via , numero, interno , famiglia , millesimi) values ('roma', 1, 5, 'Bianchi', 200);
+insert into Famiglia(via , numero, interno , famiglia , millesimi) values ('roma', 1, 3, 'Verdi', 300);
+select * from Famiglia;
+
+
+create table Scala(scala varchar(20),via varchar(100), numero integer(3) , interno integer(3));
+insert into Scala(scala, via , numero, interno) values (1, 'roma', 1, 18);
+insert into Scala(scala, via , numero, interno) values (2, 'roma', 1, 3);
+insert into Scala(scala, via , numero, interno) values (2, 'roma', 1, 5);
+
+select * from Scala;
+
+
+create table Bolletta(via varchar(100), numero integer(3) , interno integer(3), consumo integer(3) , tariffa integer(3));
+insert into Bolletta( via , numero, interno, consumo, tariffa) values ('roma', 1, 18, 550, 15);
+insert into Bolletta( via , numero, interno, consumo, tariffa) values ('roma', 2, 5, 500, 13);
+
+select * from Bolletta;
+
+//con coalesce mette 0 se un valore è nullo
+select famiglia, F.via, F.numero, F.interno, coalesce(tariffa*consumo, 0)
+from Bolletta B JOIN Famiglia F ON (B.via=F.via and B.interno=F.interno  and B.numero=F.numero )
+;
+
+//group by rigorosamente con tutto, SE SI VUOLE UNA SOMMA DI TUTTE LE SPESE coalesce(sum(tariffa*millesimi), '0') 
+
+select F.famiglia, F.via, F.numero, F.interno, coalesce(tariffa*millesimi, '0') as prezzo
+from Bolletta B JOIN Famiglia F ON (B.via=F.via and B.interno=F.interno  and B.numero=F.numero)
+group by F.famiglia, F.via, F.numero, F.interno, prezzo having max(prezzo);
+
+//ATTENTI AL NATURAL JOIN 
+select scala, sum(millesimi) 
+from Scala S NATURAL JOIN Famiglia F 
+group by S.scala ;
+
+
+---------
+create table Voto(codfilm integer(10) , codutente integer(10), valutazione integer(3));
+insert into Voto(codfilm,codutente,valutazione) values (11234,19023,7);
+insert into Voto(codfilm,codutente,valutazione) values (21234,892,9);
+insert into Voto(codfilm,codutente,valutazione) values (31234,892,8);
+insert into Voto(codfilm,codutente,valutazione) values (41234,19291,6);
+insert into Voto(codfilm,codutente,valutazione) values (41234,892,9);
+select * from Voto;
+
+create table Utente(codutente integer(10), alias char(20), eta integer(3));
+insert into Utente(codutente, alias, eta) values (892,'MarioRossi',7);
+insert into Utente(codutente, alias, eta) values (19023,'Ale',7);
+insert into Utente(codutente, alias, eta) values (19291,'Bianchi',7);
+select * from Utente;
+
+create table Film(codfilm integer(10), titolo char(20), anno integer(4), regista char(20));
+insert into Film(codfilm,titolo,anno,regista) values (11234,'BladeRunner',1982, 'Scott');
+insert into Film(codfilm,titolo,anno,regista) values (21234,'Pulp',1994, 'Scott');
+insert into Film(codfilm,titolo,anno,regista) values (31234,'Django',2010, 'Scott');
+insert into Film(codfilm,titolo,anno,regista) values (41234,'Rush',1970, 'Scott');
+select * from Film;
+
+select f.titolo, avg(valutazione) as val
+from Film f NATURAL JOIN Voto v
+group by f.titolo;
+
+//NB val si vede solo ESTERNAMENTE quindi solo se messo in having
+select f.titolo,f.anno,f.codfilm, avg(valutazione) as val
+from Film f JOIN Voto v ON (f.codfilm=v.codfilm)
+where f.anno>1980 and f.anno<2010
+GROUP BY  f.titolo ,f.anno,f.codfilm having val>7;
+
+//dare un nome al join annidato è utile e corretto
+
+select n.alias, min(n.eta)
+from Film f JOIN (SELECT u.codutente, u.eta, v.codfilm, u.alias from Utente u  JOIN Voto v ON (u.codutente=v.codutente) WHERE v.valutazione>8) as n ON (f.codfilm=n.codfilm)
+where f.titolo='Django'
+GROUP BY  n.alias ;
+
+
+------
+
+create table Modello(idModello integer(10) , idMarca char(10), nome char(10),  categoria char(10));
+insert into Modello(idModello, idMarca , nome,  categoria) values(21234, 'DK15', 'ClasseC', 'Berlina');
+insert into Modello(idModello, idMarca , nome,  categoria) values(41234, 'BY80', 'Clio', 'Utilitaria');
+select * from Modello;
+
+create table Valutazione(idModello integer(10) ,anno integer(4), prezzo  integer(20));
+insert into Valutazione(idModello, anno, prezzo) values(11234 ,2003, 7000);
+insert into Valutazione(idModello, anno, prezzo) values(11234, 2008, 9000);
+insert into Valutazione(idModello, anno, prezzo) values(21234, 2004, 15000);
+insert into Valutazione(idModello, anno, prezzo) values(21234, 2005, 16000);
+insert into Valutazione(idModello, anno, prezzo) values(21234, 2005, 16000);
+insert into Valutazione(idModello, anno, prezzo) values(41234, 2012, 13000);
+select * from Valutazione;
+
+
+create table Marca(idMarca char(10) , marchio char(10), nazionalita char(20));
+insert into Marca(idMarca, marchio, nazionalita) values('US41', 'Hummer', 'Stati Uniti');
+insert into Marca(idMarca, marchio, nazionalita) values('FS11', 'Ferrari', 'Italia');
+insert into Marca(idMarca, marchio, nazionalita) values('CZ12', 'Renault', 'Francia');
+insert into Marca(idMarca, marchio, nazionalita) values('DK15', 'BMW', 'Germania');
+insert into Marca(idMarca, marchio, nazionalita) values('BY80', 'Mercedes', 'Germania');
+select * from Marca;
+
+
+select rm.idMarca,coalesce(avg(rm.prezzo),'0')
+from Marca m join (select r.idMarca, v.prezzo from  Valutazione v join Modello r on r.idModello=v.idModello group by r.idMarca, v.prezzo) as rm on (rm.idMarca=m.idMarca) where nazionalita='Germania'
+group by  rm.idMarca;
+
+select v.prezzo, v.idModello, count(n.categoria)
+from Valutazione v  join ( select m.categoria, ma.marchio, m.idModello from Marca ma join Modello m on ma.idMarca=m.idMarca where nazionalita='Germania') as n
+on n.idModello=v.idModello where categoria='Berlina' and v.prezzo>15000 and anno>2004
+group by  v.prezzo, v.idModello;
+
+-----
+
+create table Ingrediente( id integer(3) ,nome varchar(10), tipo varchar(20));
+
+insert into Ingrediente(id ,nome, tipo ) values (111, 'aglio', 'ortaggio');
+
+insert into Ingrediente(id ,nome, tipo ) values (222, 'gorgo', 'formaggio');
+
+insert into Ingrediente(id ,nome, tipo ) values (333, 'spaghetti', 'pasta');
+
+create table Composizione( idricetta integer(10) , idingrediente integer(10));
+
+insert into Composizione(idricetta ,idingrediente ) values (1111, 111);
+insert into Composizione(idricetta ,idingrediente ) values (2222, 222);
+insert into Composizione(idricetta ,idingrediente ) values (2222, 333);
+insert into Composizione(idricetta ,idingrediente ) values (4444, 333);
+insert into Composizione(idricetta ,idingrediente ) values (3333, 222);
+insert into Composizione(idricetta ,idingrediente ) values (3333, 333);
+
+
+create table Ricetta( id integer(3) ,nome varchar(100), cucina varchar(100));
+
+insert into Ricetta(id ,nome, cucina) values (1111, 'pastadelcontadino', 'Mediterranea');
+insert into Ricetta(id ,nome, cucina) values (2222, 'scoglio', 'Mediterranea');
+insert into Ricetta(id ,nome, cucina) values (3333, 'amatriciana', 'Mediterranea');
+insert into Ricetta(id ,nome, cucina) values (4444, 'cantonese', 'asiatica');
+insert into Ricetta(id ,nome, cucina) values (5555, 'churros', 'ispanica');
+insert into Ricetta(id ,nome, cucina) values (6666, 'jamon', 'ispanica');
+
+
+SELECT Ricetta.cucina
+FROM Ricetta JOIN (SELECT Composizione.idricetta, Ingrediente.nome 
+FROM Ingrediente JOIN Composizione ON Ingrediente.id = Composizione.idingrediente) as r  ON ( Ricetta.id = r.idricetta )
+WHERE r.nome='aglio'
+GROUP BY Ricetta.cucina ORDER BY COUNT(r.nome) DESC;
+
+SELECT Ricetta.nome
+From Ricetta where Ricetta.id in (select Composizione.idricetta from Ingrediente join Composizione on Ingrediente.id=Composizione.idingrediente 
+where tipo = 'formaggio') and Ricetta.id in (select Composizione.idricetta from Ingrediente join Composizione on Ingrediente.id=Composizione.idingrediente 
+where tipo = 'pasta');
+
+-----
+
+create table Socio(numerotessera integer(10), nome varchar(10));
+insert into Socio(numerotessera,nome)  values (1111 , 'Paolo');
+insert into Socio(numerotessera,nome) values (2222 , 'Michele');
+insert into Socio(numerotessera,nome) values (3333 , 'Giova');
+
+
+select * from Socio;
+
+
+create table Prestito(codice varchar(10), numerotessera integer(10),datainizio varchar(10) );
+insert into Prestito(codice,numerotessera,datainizio) values ('dvd1',1111,'1/1/2013');
+insert into Prestito(codice,numerotessera,datainizio) values ('dvd2',1111,'1/1/2013');
+insert into Prestito(codice,numerotessera,datainizio) values ('dvd4',1111,'1/1/2013');
+insert into Prestito(codice,numerotessera,datainizio) values ('dvd3',2222,'1/1/2013');
+
+select * from Prestito;
+
+create table dvd(codice varchar(10), genere varchar(10) );
+insert into dvd(codice, genere) values ('dvd1','fantasy');
+insert into dvd(codice, genere) values ('dvd2','drammatico');
+insert into dvd(codice, genere) values ('dvd3','drammatico');
+insert into dvd(codice, genere) values ('dvd4','drammatico');
+
+select * from dvd;
+
+select s1.nome
+from Socio s1, Prestito p2, Prestito p
+where s1.numerotessera=p.numerotessera and s1.numerotessera <> p2.numerotessera and p.datainizio=p2.datainizio
+group by s1.nome;
+
+select nome
+from Socio natural join (select * from Prestito natural join dvd) as r
+where r.genere='drammatico'
+group by nome having count(r.codice)>1;
+
+
